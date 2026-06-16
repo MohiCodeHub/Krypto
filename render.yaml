@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: krypto-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    plan: free
+    envVars:
+      # Set the real value in the Render dashboard; never commit secrets.
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5
+      # Set to your Vercel frontend URL once the frontend is deployed.
+      - key: FRONTEND_ORIGIN
+        sync: false

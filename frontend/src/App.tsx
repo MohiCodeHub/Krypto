@@ -4,6 +4,11 @@ type Role = 'user' | 'assistant';
 type Message = { role: Role; content: string };
 type Theme = 'light' | 'dark';
 
+// Base URL for the backend API. Empty string keeps relative paths so the Vite
+// dev proxy handles `/api/...` locally. In production (e.g. Vercel), set
+// VITE_API_BASE_URL to the deployed backend URL to call it directly.
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem('krypto-theme');
   if (stored === 'light' || stored === 'dark') return stored;
@@ -29,7 +34,7 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    fetch('/api/health')
+    fetch(`${API_BASE}/api/health`)
       .then((r) => r.json())
       .then((d) => {
         setModel(d.model);
@@ -61,7 +66,7 @@ export default function App() {
     requestAnimationFrame(autosize);
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: next }),
