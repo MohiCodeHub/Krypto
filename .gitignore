@@ -17,3 +17,9 @@ npm-debug.log*
 .DS_Store
 .vscode/
 .idea/
+
+# Krypto's personal self-files — kept local only, never committed.
+# (The repo should ship user-agnostic templates instead.)
+agent/identity.md
+agent/user.md
+agent/memory.md
