@@ -2,36 +2,37 @@
 
 Krypto runs as two pieces:
 
-- **Backend** — Node + Express API, deployed to **Render** as a Docker web service.
+- **Backend** — Node + Express API, deployed to **Render** using its native
+  Node runtime (no Docker).
 - **Frontend** — React + Vite SPA, deployed to **Vercel**.
 
 Deploy the backend first so you have its URL for the frontend.
 
 ---
 
-## 1. Backend → Render (Docker)
+## 1. Backend → Render (native Node)
 
-The backend is containerized via `backend/Dockerfile` (multi-stage, runs as a
-non-root user, binds to the `PORT` Render injects at runtime).
+Render builds and runs the app directly from the repo — no container to manage.
 
 ### Option A: Blueprint (recommended)
 
 1. Push this repo to GitHub.
 2. In the Render dashboard: **New → Blueprint**, and point it at the repo.
    Render reads the root `render.yaml`, which declares the `krypto-backend`
-   Docker web service (`dockerfilePath: ./backend/Dockerfile`,
-   `dockerContext: ./backend`, health check `/api/health`).
+   Node web service (`rootDir: backend`, `buildCommand: npm install && npm run
+   build`, `startCommand: npm start`, health check `/api/health`).
 3. When prompted, fill in the env vars marked `sync: false` (see below).
-4. Apply / create the service. Render builds the image and deploys it.
+4. Apply / create the service. Render installs, builds, and starts it.
 
-### Option B: Manual Docker service
+### Option B: Manual web service
 
 1. **New → Web Service**, connect the repo.
-2. Set **Runtime / Environment** to **Docker**.
-3. Set **Dockerfile Path** to `backend/Dockerfile` and **Docker Build Context
-   Directory** to `backend`.
-4. Set **Health Check Path** to `/api/health`.
-5. Add the env vars below, then create the service.
+2. Set **Language / Runtime** to **Node**.
+3. Set **Root Directory** to `backend`.
+4. **Build Command:** `npm install && npm run build`
+5. **Start Command:** `npm start`
+6. Set **Health Check Path** to `/api/health`.
+7. Add the env vars below, then create the service.
 
 ### Env vars to set in the Render dashboard
 
@@ -44,17 +45,12 @@ non-root user, binds to the `PORT` Render injects at runtime).
 > Do **not** set `PORT` — Render provides it automatically and the app reads
 > `process.env.PORT`.
 
-> **Agent self-files & memory (note):** The backend reads optional
-> `identity.md` / `user.md` / `memory.md` and writes new memories to an
-> `agent/` directory. By default that directory resolves outside the Docker
-> build context, so in the container it lands at an **ephemeral** path that is
-> wiped on each deploy/restart. The app runs fine without it (those reads fail
-> soft). If you want persistent memory in production, attach a Render persistent
-> disk and set `KRYPTO_AGENT_DIR` to the mounted path (e.g. `/data/agent`).
-
-After deploy, note the public URL, e.g. `https://krypto-backend.onrender.com`.
-Verify it: `https://krypto-backend.onrender.com/api/health` should return
-`{ "status": "ok", ... }`.
+> **Agent self-files & memory (note):** Render checks out the whole repo, so the
+> `agent/` self-files (`identity.md` / `user.md` / `memory.md`) are present and
+> readable, and `remember` can write within a running instance. However, Render's
+> filesystem is **ephemeral** — on each deploy or restart it re-clones from git,
+> so any memory written at runtime is lost (it isn't committed back). Durable
+> memory is a planned follow-up (cloud database).
 
 ---
 
